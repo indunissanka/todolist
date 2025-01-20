@@ -16,7 +16,7 @@ import React, { useState } from 'react';
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="flex-1 px-4 py-3 border rounded-md focus:ring-2 focus:ring-primary focus:border-primary-dark text-dark mb-2"
-            placeholder="Username"
+            placeholder="Email"
           />
           <input
             type="password"

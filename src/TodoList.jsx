@@ -2,16 +2,16 @@ import React from 'react';
     function TodoList({ todos, toggleComplete, removeTodo }) {
       return (
         <ul className="list-none">
-          {todos.map((todo, index) => (
+          {todos.map((todo) => (
             <li
-              key={index}
+              key={todo.id}
               className="flex justify-between items-center mb-3 p-3 bg-light rounded-md shadow-sm"
             >
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   checked={todo.completed}
-                  onChange={() => toggleComplete(index)}
+                  onChange={() => toggleComplete(todo.id, todo.completed)}
                   className="mr-3 h-5 w-5 text-primary focus:ring-primary-dark rounded border-gray-300"
                 />
                 <div>
@@ -35,7 +35,7 @@ import React from 'react';
                 </div>
               </div>
               <button
-                onClick={() => removeTodo(index)}
+                onClick={() => removeTodo(todo.id)}
                 className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md focus:ring-2 focus:ring-red-700"
               >
                 X

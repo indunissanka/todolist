@@ -1,52 +1,100 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
     import TodoList from './TodoList';
     import TodoForm from './TodoForm';
     import LoginForm from './LoginForm';
+    import supabase from './supabase';
     function App() {
       const [todos, setTodos] = useState([]);
       const [loggedIn, setLoggedIn] = useState(false);
-      const addTodo = (text, dateTime, note) => {
-        setTodos([...todos, { text, completed: false, dateTime, note }]);
-      };
-      const toggleComplete = (index) => {
-        setTodos(
-          todos.map((todo, i) =>
-            i === index ? { ...todo, completed: !todo.completed } : todo,
-          ),
-        );
-      };
-      const removeTodo = (index) => {
-        setTodos(todos.filter((_, i) => i !== index));
-      };
-      const handleLogin = (username, password) => {
-        if (username === 'user' && password === 'password') {
-          setLoggedIn(true);
-          setTodos([
-            {
-              text: 'Buy groceries',
-              completed: false,
-              dateTime: new Date().toISOString(),
-              note: 'Milk, eggs, bread',
-            },
-            {
-              text: 'Pay bills',
-              completed: false,
-              dateTime: new Date().toISOString(),
-              note: 'Electricity, internet',
-            },
-          ]);
-        } else {
-          alert('Invalid credentials');
+      const [loading, setLoading] = useState(true);
+      useEffect(() => {
+        const session = supabase.auth.getSession();
+        setLoggedIn(!!session);
+        if (session) {
+          fetchTodos();
         }
+        setLoading(false);
+      }, []);
+      const fetchTodos = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('todos')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.error('Error fetching todos:', error);
+        } else {
+          setTodos(data);
+        }
+        setLoading(false);
       };
-      const handleLogout = () => {
+      const addTodo = async (text, dateTime, note) => {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('todos')
+          .insert([{ text, completed: false, dateTime, note }])
+          .select();
+        if (error) {
+          console.error('Error adding todo:', error);
+        } else {
+          setTodos([...todos, ...data]);
+        }
+        setLoading(false);
+      };
+      const toggleComplete = async (id, completed) => {
+        setLoading(true);
+        const { error } = await supabase
+          .from('todos')
+          .update({ completed: !completed })
+          .eq('id', id);
+        if (error) {
+          console.error('Error toggling todo:', error);
+        } else {
+          setTodos(
+            todos.map((todo) =>
+              todo.id === id ? { ...todo, completed: !todo.completed } : todo,
+            ),
+          );
+        }
+        setLoading(false);
+      };
+      const removeTodo = async (id) => {
+        setLoading(true);
+        const { error } = await supabase.from('todos').delete().eq('id', id);
+        if (error) {
+          console.error('Error removing todo:', error);
+        } else {
+          setTodos(todos.filter((todo) => todo.id !== id));
+        }
+        setLoading(false);
+      };
+      const handleLogin = async (username, password) => {
+        setLoading(true);
+        const { error } = await supabase.auth.signInWithPassword({
+          email: username,
+          password: password,
+        });
+        if (error) {
+          alert('Invalid credentials');
+        } else {
+          setLoggedIn(true);
+          fetchTodos();
+        }
+        setLoading(false);
+      };
+      const handleLogout = async () => {
+        setLoading(true);
+        await supabase.auth.signOut();
         setLoggedIn(false);
         setTodos([]);
+        setLoading(false);
       };
       return (
         <div className="bg-light min-h-screen py-10">
           <div className="container mx-auto p-4 bg-white rounded-lg shadow-md">
-            {loggedIn ? (
+            {loading ? (
+              <div className="text-center">Loading...</div>
+            ) : loggedIn ? (
               <>
                 <div className="flex justify-between items-center mb-6">
                   <h1 className="text-3xl font-bold text-dark text-center">
